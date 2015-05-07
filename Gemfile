@@ -93,6 +93,8 @@ group :development, :test do
   gem 'binding_of_caller'
   gem 'guard-rspec'
   gem 'quiet_assets'
+  gem 'capistrano-rails'
+  gem 'capistrano-passenger'
 end
 
 group :test do

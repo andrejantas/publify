@@ -1,4 +1,4 @@
-config/database.yml
+config/deploy/production.rb
 config/mail.yml
 config/timezone.yml
 config/secret.token
@@ -31,3 +31,5 @@ Gemfile.lock
 /themes/*
 !/themes/bootstrap-2
 gems/
+
+config/deploy.rb

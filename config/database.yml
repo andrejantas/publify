@@ -1,0 +1,28 @@
+remote: &remote
+  adapter: mysql2
+  encoding: utf8
+  reconnect: false
+  pool: 5
+  username: root
+  password: a+5Pe+vWUuzp9&KG
+
+local: &local
+  adapter: mysql2
+  encoding: utf8
+  reconnect: false
+  pool: 5
+  username: root
+  password:
+  socket: /tmp/mysql.sock
+
+development:
+  database: publify_dev
+  <<: *local
+
+test:
+  database: publify_tests
+  <<: *local
+
+production:
+  database: publify
+  <<: *remote
