@@ -32,3 +32,7 @@ public/cache/*
 gems/
 
 config/deploy.rb
+
+tags
+
+themes/bootstrap-2/.DS_Store

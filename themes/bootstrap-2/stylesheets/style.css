@@ -9,8 +9,8 @@ body {
 
 #logo {
   margin-top: 60px;
-  height: 300px;
-  background-image: url('../../images/theme/header.jpg');
+  height: 200px;
+  background: white;
   background-position: center center;
   -webkit-background-size: cover;
   -moz-background-size: cover;
@@ -23,9 +23,9 @@ body {
 }
 
 .vertical {
+  padding-top: 25px;
   display: table-cell;
   vertical-align: middle;
-  height: 300px;
   text-align: center;
 }
 
@@ -76,4 +76,36 @@ body {
 
 #sidebar {
   padding-top: 24px;
+}
+
+.ruby_logo {
+  width: 125px;
+  height: 125px;
+  float: left;
+  background: url("../../images/theme/ruby.png") no-repeat;
+  background-size: 120px 120px;
+  margin-top: 20px
+}
+
+.align-left {
+  text-align: left;
+}
+
+.align-left h1 a {
+  text-decoration: none;
+  color: black;
+}
+
+.navbar.navbar-default {
+  background-color: #000;
+  margin-bottom: 0px;
+}
+
+#navigation {
+  padding-left: 0px;
+  padding-right: 0px;
+}
+
+.nav {
+  padding-left: 65px;
 }
