@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150207131657) do
+ActiveRecord::Schema.define(version: 20160110094906) do
 
   create_table "articles_tags", id: false, force: :cascade do |t|
     t.integer "article_id", limit: 4
@@ -45,10 +45,11 @@ ActiveRecord::Schema.define(version: 20150207131657) do
     t.boolean  "allow_pings",    limit: 1
     t.boolean  "allow_comments", limit: 1
     t.datetime "published_at"
-    t.string   "state",          limit: 255
-    t.integer  "parent_id",      limit: 4
-    t.text     "settings",       limit: 65535
-    t.string   "post_type",      limit: 255,   default: "read"
+    t.string   "state"
+    t.integer  "parent_id"
+    t.text     "settings"
+    t.string   "post_type",      default: "read"
+    t.integer  "blog_id"
   end
 
   add_index "contents", ["id", "type"], name: "index_contents_on_id_and_type", using: :btree
@@ -127,11 +128,12 @@ ActiveRecord::Schema.define(version: 20150207131657) do
   add_index "redirections", ["redirect_id"], name: "index_redirections_on_redirect_id", using: :btree
 
   create_table "redirects", force: :cascade do |t|
-    t.string   "from_path",  limit: 255
-    t.string   "to_path",    limit: 255
-    t.string   "origin",     limit: 255
+    t.string   "from_path"
+    t.string   "to_path"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.integer  "content_id"
+    t.integer  "blog_id"
   end
 
   create_table "resources", force: :cascade do |t|
@@ -154,10 +156,11 @@ ActiveRecord::Schema.define(version: 20150207131657) do
   add_index "resources", ["article_id"], name: "index_resources_on_article_id", using: :btree
 
   create_table "sidebars", force: :cascade do |t|
-    t.integer "active_position", limit: 4
-    t.text    "config",          limit: 65535
-    t.integer "staged_position", limit: 4
-    t.string  "type",            limit: 255
+    t.integer "active_position"
+    t.text    "config"
+    t.integer "staged_position"
+    t.string  "type"
+    t.integer "blog_id",         null: false
   end
 
   add_index "sidebars", ["id", "type"], name: "index_sidebars_on_id_and_type", using: :btree
@@ -176,7 +179,8 @@ ActiveRecord::Schema.define(version: 20150207131657) do
     t.string   "name",         limit: 255
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.string   "display_name", limit: 255
+    t.string   "display_name"
+    t.integer  "blog_id"
   end
 
   create_table "text_filters", force: :cascade do |t|
@@ -197,24 +201,36 @@ ActiveRecord::Schema.define(version: 20150207131657) do
   add_index "triggers", ["pending_item_id", "pending_item_type"], name: "index_triggers_on_pending_item_id_and_pending_item_type", using: :btree
 
   create_table "users", force: :cascade do |t|
-    t.string   "login",                     limit: 255
-    t.string   "password",                  limit: 255
-    t.text     "email",                     limit: 65535
-    t.text     "name",                      limit: 65535
-    t.boolean  "notify_via_email",          limit: 1
-    t.boolean  "notify_on_new_articles",    limit: 1
-    t.boolean  "notify_on_comments",        limit: 1
-    t.integer  "profile_id",                limit: 4
-    t.string   "remember_token",            limit: 255
+    t.string   "login"
+    t.string   "encrypted_password",        default: "",       null: false
+    t.string   "email",                     default: "",       null: false
+    t.text     "name"
+    t.boolean  "notify_via_email"
+    t.boolean  "notify_on_new_articles"
+    t.boolean  "notify_on_comments"
+    t.integer  "profile_id"
+    t.string   "remember_token"
     t.datetime "remember_token_expires_at"
     t.string   "text_filter_id",            limit: 255,   default: "1"
     t.string   "state",                     limit: 255,   default: "active"
     t.datetime "last_connection"
-    t.text     "settings",                  limit: 65535
-    t.integer  "resource_id",               limit: 4
+    t.text     "settings"
+    t.integer  "resource_id"
+    t.string   "reset_password_token"
+    t.datetime "reset_password_sent_at"
+    t.datetime "remember_created_at"
+    t.integer  "sign_in_count",             default: 0,        null: false
+    t.datetime "current_sign_in_at"
+    t.datetime "last_sign_in_at"
+    t.string   "current_sign_in_ip"
+    t.string   "last_sign_in_ip"
+    t.datetime "created_at"
+    t.datetime "updated_at"
   end
 
+  add_index "users", ["email"], name: "index_users_on_email", unique: true, using: :btree
   add_index "users", ["profile_id"], name: "index_users_on_profile_id", using: :btree
+  add_index "users", ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true, using: :btree
   add_index "users", ["resource_id"], name: "index_users_on_resource_id", using: :btree
   add_index "users", ["text_filter_id"], name: "index_users_on_text_filter_id", using: :btree
 

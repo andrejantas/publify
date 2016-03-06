@@ -9,13 +9,24 @@ class Blog < ActiveRecord::Base
   include ConfigManager
   include Rails.application.routes.url_helpers
 
+  has_many :contents
+  has_many :articles
+  has_many :feedback, through: :articles
+
+  has_many(:published_articles,
+           ->() { includes(:tags).where(published: true).order('contents.published_at DESC') },
+           class_name: 'Article')
+
+  has_many :pages
+  has_many :tags
+  has_many :notes
+
+  has_many :redirects
+  has_many :sidebars, ->() { order('active_position ASC') }
+
   attr_accessor :custom_permalink
 
   default_scope -> { order('id') }
-
-  validate(on: :create) do |blog|
-    blog.errors.add(:base, 'There can only be one...') unless Blog.count.zero?
-  end
 
   validates :blog_name, presence: true
 
@@ -112,14 +123,13 @@ class Blog < ActiveRecord::Base
   setting :statuses_in_timeline, :boolean, true
 
   validate :permalink_has_identifier
+  # validates :base_url, presence: true
 
-  # The default Blog. This is the lowest-numbered blog, almost always
-  # id==1. This should be the only blog as well.
-  def self.default
-    first
-  rescue
-    logger.warn 'You have no blog installed.'
-    nil
+  # Find the Blog that matches a specific base URL. If no Blog object is found
+  # that matches, then grab the first blog. If *that* fails, then create a new
+  # Blog. The last case should only be used when Publify is first installed.
+  def self.find_blog(base_url)
+    Blog.find_by_base_url(base_url) || Blog.first || Blog.new
   end
 
   # In settings with :article_id
@@ -127,7 +137,6 @@ class Blog < ActiveRecord::Base
     unless global_pings_enabled? && settings.key?(:url) && settings.key?(:article_id)
       throw :error, 'Invalid trackback or trackbacks not enabled'
     end
-    settings[:blog_id] = id
     article = Article.find(settings[:article_id])
     throw :error, 'Trackback not saved' unless article.allow_pings?
     article.trackbacks.create!(settings)
@@ -157,11 +166,11 @@ class Blog < ActiveRecord::Base
   def url_for_with_base_url(options = {}, extra_params = {})
     case options
     when String
-      if extra_params[:only_path]
-        url_generated = root_path
-      else
-        url_generated = base_url
-      end
+      url_generated = if extra_params[:only_path]
+                        root_path
+                      else
+                        base_url
+                      end
       url_generated += "/#{options}" # They asked for 'url_for "/some/path"', so return it unedited.
       url_generated += "##{extra_params[:anchor]}" if extra_params[:anchor]
       url_generated
@@ -243,6 +252,10 @@ class Blog < ActiveRecord::Base
 
   def allow_signup?
     allow_signup == 1
+  end
+
+  def shortener_url
+    custom_url_shortener.present? ? custom_url_shortener : base_url
   end
 
   private

@@ -5,16 +5,17 @@ class Theme
   attr_accessor :name, :path, :description_html
 
   def initialize(name, path)
-    @name, @path = name, path
+    @name = name
+    @path = path
   end
 
   def layout(action = :default)
     if action.to_s == 'view_page'
       if File.exist? "#{::Rails.root}/themes/#{name}/views/layouts/pages.html.erb"
-        return 'layouts/pages.html'
+        return 'layouts/pages'
       end
     end
-    'layouts/default.html'
+    'layouts/default'
   end
 
   def description
@@ -31,7 +32,7 @@ class Theme
   end
 
   def self.theme_path(name)
-    themes_root + '/' + name
+    File.join(themes_root, name)
   end
 
   def self.theme_from_path(path)

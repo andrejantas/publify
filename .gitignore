@@ -29,6 +29,7 @@ public/cache/*
 /vendor/bundle
 /themes/*
 !/themes/bootstrap-2
+!/themes/plain
 gems/
 
 config/deploy.rb

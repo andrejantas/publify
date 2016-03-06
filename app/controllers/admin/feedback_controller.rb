@@ -1,9 +1,9 @@
 class Admin::FeedbackController < Admin::BaseController
   cache_sweeper :blog_sweeper
-  ONLY_DOMAIN = %w(unapproved presumed_ham presumed_spam ham spam)
+  ONLY_DOMAIN = %w(unapproved presumed_ham presumed_spam ham spam).freeze
 
   def index
-    scoped_feedback = Feedback
+    scoped_feedback = this_blog.feedback
 
     if params[:only].present?
       @only_param = ONLY_DOMAIN.dup.delete(params[:only])
@@ -19,12 +19,8 @@ class Admin::FeedbackController < Admin::BaseController
     @record = Feedback.find params[:id]
 
     unless @record.article.user_id == current_user.id
-      unless current_user.admin?
-        return redirect_to admin_feedback_index_url
-      end
+      return redirect_to admin_feedback_index_url unless current_user.admin?
     end
-
-    return(render 'admin/shared/destroy') unless request.post?
 
     begin
       @record.destroy
@@ -37,7 +33,7 @@ class Admin::FeedbackController < Admin::BaseController
 
   def create
     @article = Article.find(params[:article_id])
-    @comment = @article.comments.build(params[:comment].permit!)
+    @comment = @article.comments.build(comment_params)
     @comment.user_id = current_user.id
 
     if request.post? && @comment.save
@@ -64,7 +60,7 @@ class Admin::FeedbackController < Admin::BaseController
       redirect_to admin_feedback_index_url
       return
     end
-    comment.attributes = params[:comment].permit!
+    comment.attributes = comment_params
     if request.post? && comment.save
       flash[:success] = I18n.t('admin.feedback.update.success')
       redirect_to action: 'article', id: comment.article.id
@@ -74,7 +70,7 @@ class Admin::FeedbackController < Admin::BaseController
   end
 
   def article
-    @article = Article.find(params[:id])
+    @article = this_blog.articles.find(params[:id])
     @feedback = @article.comments.ham if params[:ham] && params[:spam].blank?
     @feedback = @article.comments.spam if params[:spam] && params[:ham].blank?
     @feedback ||= @article.comments
@@ -90,12 +86,10 @@ class Admin::FeedbackController < Admin::BaseController
       if params[:context] != 'listing'
         @comments = Comment.last_published
         page.replace_html('commentList', partial: 'admin/dashboard/comment')
+      elsif template == 'ham'
+        format.js { render 'ham' }
       else
-        if template == 'ham'
-          format.js { render 'ham' }
-        else
-          format.js { render 'spam' }
-        end
+        format.js { render 'spam' }
       end
     end
   end
@@ -145,7 +139,11 @@ class Admin::FeedbackController < Admin::BaseController
     end
   end
 
-  protected
+  private
+
+  def comment_params
+    params.require(:comment).permit(:author, :email, :url, :body)
+  end
 
   def update_feedback(items, method)
     items.each do |value|

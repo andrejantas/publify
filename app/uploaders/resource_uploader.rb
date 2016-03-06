@@ -1,14 +1,4 @@
 class ResourceUploader < CarrierWave::Uploader::Base
-  # To handle Base64 uploads...
-  class FilelessIO < StringIO
-    attr_accessor :original_filename
-
-    def initialize(data, filename)
-      super(data)
-      @original_filename = filename
-    end
-  end
-
   include CarrierWave::MiniMagick
 
   def store_dir
@@ -28,8 +18,7 @@ class ResourceUploader < CarrierWave::Uploader::Base
   end
 
   def dynamic_resize_to_fit(size)
-    blog = Blog.default
-    resize_setting = blog.send("image_#{size}_size").to_i
+    resize_setting = model.blog.send("image_#{size}_size").to_i
 
     resize_to_fit(resize_setting, resize_setting)
   end

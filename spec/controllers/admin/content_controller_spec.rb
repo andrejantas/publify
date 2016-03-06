@@ -3,12 +3,14 @@ require 'rails_helper'
 describe Admin::ContentController, type: :controller do
   render_views
 
-  let!(:blog) { create(:blog) }
   let!(:article) { create(:article) }
 
   context 'as publisher (admin can do the same)' do
-    let!(:user) { create(:user, :as_publisher) }
-    before(:each) { request.session = { user: user.id } }
+    let(:user) { create(:user, :as_publisher) }
+
+    before do
+      sign_in user
+    end
 
     describe 'index' do
       context 'simple query' do
@@ -93,7 +95,7 @@ describe Admin::ContentController, type: :controller do
       it { expect(response).to be_success }
       it { expect(response).to render_template('new') }
       it { expect(assigns(:article)).to_not be_nil }
-      it { expect(assigns(:article).redirects).to be_empty }
+      it { expect(assigns(:article).redirect).to be_nil }
     end
 
     describe '#create' do
@@ -132,7 +134,7 @@ describe Admin::ContentController, type: :controller do
         it do
           expect do
             post :create, article: article_params
-          end.to_not change(Redirection, :count) end
+          end.to_not change(Redirect, :count) end
 
         it do
           expect do
@@ -241,7 +243,7 @@ describe Admin::ContentController, type: :controller do
   describe 'with admin connection' do
     before(:each) do
       @user = create(:user, :as_admin, text_filter: create(:markdown))
-      request.session = { user: @user.id }
+      sign_in @user
       @article = create(:article)
     end
 
@@ -399,7 +401,7 @@ describe Admin::ContentController, type: :controller do
       it 'should return foo for keywords fo' do
         get :auto_complete_for_article_keywords, article: { keywords: 'fo' }
         expect(response).to be_success
-        expect(response.body).to eq("[\"bar\", \"bazz\", \"foo\"]")
+        expect(response.body).to eq('["bar","bazz","foo"]')
       end
     end
   end
@@ -411,7 +413,7 @@ describe Admin::ContentController, type: :controller do
       user.save
       @user = user
       @article = create(:article, user: user)
-      request.session = { user: user.id }
+      sign_in user
     end
 
     it_should_behave_like 'create action'
@@ -420,7 +422,9 @@ describe Admin::ContentController, type: :controller do
   describe 'with publisher connection' do
     let!(:user) { create(:user, text_filter: create(:markdown), profile: create(:profile_publisher)) }
 
-    before(:each) { request.session = { user: user.id } }
+    before do
+      sign_in user
+    end
 
     describe '#edit' do
       context 'with an article from an other user' do
@@ -452,38 +456,19 @@ describe Admin::ContentController, type: :controller do
     end
 
     describe '#destroy' do
-      context 'with post method' do
-        context 'with an article from other user' do
-          let(:article) { create(:article, user: create(:user, login: 'other_user')) }
+      context 'with an article from other user' do
+        let(:article) { create(:article, user: create(:user, login: 'other_user')) }
 
-          before(:each) { post :destroy, id: article.id }
-          it { expect(response).to redirect_to(action: 'index') }
-          it { expect(Article.count).to eq(1) }
-        end
-
-        context 'with an article from user' do
-          let(:article) { create(:article, user: user) }
-          before(:each) { post :destroy, id: article.id }
-          it { expect(response).to redirect_to(action: 'index') }
-          it { expect(Article.count).to eq(0) }
-        end
+        before(:each) { delete :destroy, id: article.id }
+        it { expect(response).to redirect_to(action: 'index') }
+        it { expect(Article.count).to eq(1) }
       end
 
-      context 'with get method' do
-        context 'with an article from other user' do
-          let(:article) { create(:article, user: create(:user, login: 'other_user')) }
-
-          before(:each) { get :destroy, id: article.id }
-          it { expect(response).to redirect_to(action: 'index') }
-          it { expect(Article.count).to eq(1) }
-        end
-
-        context 'with an article from user' do
-          let(:article) { create(:article, user: user) }
-          before(:each) { get :destroy, id: article.id }
-          it { expect(response).to render_template('admin/shared/destroy') }
-          it { expect(Article.count).to eq(1) }
-        end
+      context 'with an article from user' do
+        let(:article) { create(:article, user: user) }
+        before(:each) { delete :destroy, id: article.id }
+        it { expect(response).to redirect_to(action: 'index') }
+        it { expect(Article.count).to eq(0) }
       end
     end
   end

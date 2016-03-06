@@ -3,7 +3,7 @@ class ArticlesController < ContentController
   before_action :auto_discovery_feed, only: [:show, :index]
   before_action :verify_config
 
-  layout :theme_layout, except: [:comment_preview, :trackback]
+  layout :theme_layout, except: [:trackback]
 
   cache_sweeper :blog_sweeper
   caches_page :index, :archives, :read, :view_page, :redirect, if: proc { |c| c.request.query_string == '' }
@@ -11,14 +11,14 @@ class ArticlesController < ContentController
   helper :'admin/base'
 
   def index
-    conditions = (Blog.default.statuses_in_timeline) ? ['type in (?, ?)', 'Article', 'Note'] : ['type = ?', 'Article']
+    conditions = this_blog.statuses_in_timeline ? ['type in (?, ?)', 'Article', 'Note'] : ['type = ?', 'Article']
 
     limit = this_blog.per_page(params[:format])
-    if params[:year].blank?
-      @articles = Content.published.where(conditions).page(params[:page]).per(limit)
-    else
-      @articles = Content.published_at(params.values_at(:year, :month, :day)).where(conditions).page(params[:page]).per(limit)
-    end
+    @articles = if params[:year].blank?
+                  this_blog.contents.published.where(conditions).page(params[:page]).per(limit)
+                else
+                  this_blog.contents.published_at(params.values_at(:year, :month, :day)).where(conditions).page(params[:page]).per(limit)
+                end
 
     @page_title = this_blog.home_title_template
     @description = this_blog.home_desc_template
@@ -102,22 +102,10 @@ class ArticlesController < ContentController
 
   def archives
     limit = this_blog.limit_archives_display
-    @articles = Article.published.page(params[:page]).per(limit)
+    @articles = this_blog.published_articles.page(params[:page]).per(limit)
     @page_title = this_blog.archives_title_template.to_title(@articles, this_blog, params)
     @keywords = this_blog.meta_keywords
     @description = this_blog.archives_desc_template.to_title(@articles, this_blog, params)
-  end
-
-  # FIXME: Belongs in CommentsController
-  def comment_preview
-    comment_params = params[:comment] || {}
-    if comment_params[:body].blank?
-      render nothing: true
-      return
-    end
-
-    headers['Content-Type'] = 'text/html; charset=utf-8'
-    @comment = Comment.new(comment_params)
   end
 
   def tag
@@ -150,7 +138,7 @@ class ArticlesController < ContentController
     if !this_blog.configured?
       redirect_to controller: 'setup', action: 'index'
     elsif User.count == 0
-      redirect_to controller: 'accounts', action: 'signup'
+      redirect_to new_user_registration_path
     else
       return true
     end

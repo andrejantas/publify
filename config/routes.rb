@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  devise_for :users
   # TODO: use only in archive sidebar. See how made other system
   get ':year/:month', to: 'articles#index', year: /\d{4}/, month: /\d{1,2}/, as: 'articles_by_month', format: false
   get ':year/:month/page/:page', to: 'articles#index', year: /\d{4}/, month: /\d{1,2}/, as: 'articles_by_month_page', format: false
@@ -31,7 +32,7 @@ Rails.application.routes.draw do
   # CommentsController
   resources :comments, as: 'admin_comments', only: [:index, :create] do
     collection do
-      match :preview, via: [:get, :post, :put, :delete]
+      post :preview
     end
   end
 
@@ -70,6 +71,7 @@ Rails.application.routes.draw do
     get 'stylesheets/theme/:filename', action: 'stylesheets', format: false
     get 'javascripts/theme/:filename', action: 'javascript', format: false
     get 'images/theme/:filename', action: 'images', format: false
+    get 'fonts/theme/:filename', action: 'fonts', format: false
   end
 
   # For the tests
@@ -83,18 +85,10 @@ Rails.application.routes.draw do
   get '/humans', to: 'text#humans', format: 'txt'
   get '/robots', to: 'text#robots', format: 'txt'
 
-  # TODO: Check which of these routes are not needed.
-  resources :accounts, only: [:index], format: false do
+  # TODO: Remove if possible
+  resources :accounts, only: [], format: false do
     collection do
       get 'confirm'
-      get 'login'
-      post 'login'
-      get 'signup'
-      post 'signup'
-      get 'recover_password'
-      post 'recover_password'
-      get 'logout'
-      post 'logout'
     end
   end
 
@@ -133,25 +127,19 @@ Rails.application.routes.draw do
 
     resources :resources, only: [:index, :destroy], format: false do
       collection do
-        get 'get_thumbnails'
         post 'upload'
       end
     end
 
-    resources :seo, only: [:index], format: false do
-      collection do
-        get 'permalinks'
-        get 'titles'
-        post 'permalinks'
-        post 'update'
-      end
-    end
+    resource :seo, controller: 'seo', only: [:show, :update], format: false
+    resource :migrations, only: [:show, :update]
 
-    resources :settings, only: [:index], format: false do
+    # TODO: This should be a singular resource
+    resource :settings, only: [], format: false do
       collection do
+        get 'index'
         get 'display'
         get 'feedback'
-        get 'update_database'
         get 'write'
         post 'migrate'
         post 'update'
@@ -161,7 +149,7 @@ Rails.application.routes.draw do
     resources :sidebar, only: [:index, :update, :destroy] do
       collection do
         put :publish
-        put :sortable
+        post :sortable
       end
     end
 

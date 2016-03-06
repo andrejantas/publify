@@ -3,15 +3,18 @@
 require 'digest/sha1'
 
 module ApplicationHelper
+  include BlogHelper
+
   # Need to rewrite this one, quick hack to test my changes.
   attr_reader :page_title
 
   def render_sidebars(*sidebars)
-    (sidebars.blank? ? Sidebar.order(:active_position) : sidebars).map do |sb|
+    rendered_sidebars = (sidebars.blank? ? Sidebar.order(:active_position) : sidebars).map do |sb|
       @sidebar = sb
       sb.parse_request(content_array, params)
       render_sidebar(sb)
-    end.join
+    end
+    safe_join rendered_sidebars
   rescue => e
     logger.error e
     logger.error e.backtrace.join("\n")
@@ -22,7 +25,7 @@ module ApplicationHelper
     if sidebar.view_root
       render_deprecated_sidebar_view_in_view_root sidebar
     else
-      render_to_string(partial: sidebar.content_partial, locals: sidebar.to_locals_hash, layout: false)
+      render_to_string(partial: sidebar.content_partial, locals: sidebar.to_locals_hash, layout: false).html_safe
     end
   end
 
@@ -38,19 +41,12 @@ module ApplicationHelper
       new_root = File.join(this_blog.current_theme.path, 'views', new_root)
       view_root = new_root if File.exist?(File.join(new_root, 'content.rhtml'))
     end
-    render_to_string(file: "#{view_root}/content.rhtml", locals: sidebar.to_locals_hash, layout: false)
+    render_to_string(file: "#{view_root}/content.rhtml", locals: sidebar.to_locals_hash, layout: false).html_safe
   end
 
-  def articles?
-    !Article.first.nil?
-  end
-
-  def trackbacks?
-    !Trackback.first.nil?
-  end
-
-  def comments?
-    !Comment.first.nil?
+  def themeable_stylesheet_link_tag(name)
+    src = this_blog.current_theme.path + "/stylesheets/#{name}.css"
+    stylesheet_link_tag "/stylesheets/theme/#{name}.css" if File.exist? src
   end
 
   def render_to_string(*args, &block)
@@ -80,7 +76,7 @@ module ApplicationHelper
 
   def markup_help_popup(markup, text)
     if markup && markup.commenthelp.size > 1
-      "<a href=\"#{url_for controller: 'articles', action: 'markup_help', id: markup.id}\" onclick=\"return popup(this, 'Publify Markup Help')\">#{text}</a>"
+      link_to text, url_for(controller: 'articles', action: 'markup_help', id: markup.id), onclick: "return popup(this, 'Publify Markup Help')"
     else
       ''
     end
@@ -91,7 +87,7 @@ module ApplicationHelper
     tag = []
     tag << %{ onmouseover="if (getCookie('publify_user_profile') == 'admin') { $('#{admin_id}').show(); }" }
     tag << %{ onmouseout="$('#{admin_id}').hide();" }
-    tag.join ' '
+    tag.join(' ').html_safe
   end
 
   def feed_title
@@ -130,8 +126,7 @@ module ApplicationHelper
   end
 
   def author_picture(status)
-    return if status.user.twitter_profile_image.nil? || status.user.twitter_profile_image.empty?
-    return if status.twitter_id.nil? || status.twitter_id.empty?
+    return if status.user.twitter_profile_image.blank?
 
     image_tag(status.user.twitter_profile_image, class: 'alignleft', alt: status.user.nickname)
   end
@@ -149,10 +144,6 @@ module ApplicationHelper
       </script>
       HTML
     end
-  end
-
-  def use_canonical
-    "<link rel='canonical' href='#{this_blog.base_url + request.fullpath}' />".html_safe
   end
 
   def page_header_includes
@@ -208,10 +199,6 @@ module ApplicationHelper
     meta_tag 'keywords', @keywords unless @keywords.blank?
   end
 
-  def this_blog
-    @blog ||= Blog.default
-  end
-
   def stop_index_robots?(blog)
     stop = (params[:year].present? || params[:page].present?)
     stop = blog.unindex_tags if controller_name == 'tags'
@@ -244,18 +231,32 @@ module ApplicationHelper
 
   # fetches appropriate html content for RSS and ATOM feeds. Checks for:
   # - article being password protected
-  # - hiding extended content on RSS. In this case if there is an excerpt we show the excerpt, or else we show the body
+  # - hiding extended content on RSS. In this case if there is an excerpt we
+  #   show the excerpt, or else we show the body
   def fetch_html_content_for_feeds(item, this_blog)
     if item.password_protected?
       "<p>This article is password protected. Please <a href='#{item.permalink_url}'>fill in your password</a> to read it</p>"
     elsif this_blog.hide_extended_on_rss
-      if item.excerpt? && item.excerpt.length > 0
+      if item.excerpt? && !item.excerpt.empty?
         item.excerpt
       else
         html(item, :body)
       end
     else
       html(item, :all)
+    end
+  end
+
+  def nofollowify_links(string)
+    if this_blog.dofollowify
+      string
+    else
+      result = string.gsub(/<a(.*?)>/i, '<a\1 rel="nofollow">')
+      if string.html_safe?
+        result.html_safe
+      else
+        result
+      end
     end
   end
 end

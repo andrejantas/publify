@@ -1,6 +1,8 @@
 class Sidebar < ActiveRecord::Base
   serialize :config, Hash
 
+  belongs_to :blog
+
   class Field
     attr_accessor :key
     attr_accessor :options
@@ -10,7 +12,9 @@ class Sidebar < ActiveRecord::Base
     include ActionView::Helpers::FormOptionsHelper
 
     def initialize(key, default, options = {})
-      @key, @default, @options = key.to_s, default, options
+      @key = key.to_s
+      @default = default
+      @options = options
     end
 
     def label
@@ -142,7 +146,7 @@ class Sidebar < ActiveRecord::Base
     return if instance_methods.include?(key)
 
     fields << Field.build(key, default, options)
-    fieldmap.update(key => fields.last)
+    fieldmap[key] = fields.last
 
     send(:define_method, key) do
       if config.key? key
@@ -174,7 +178,7 @@ class Sidebar < ActiveRecord::Base
   end
 
   def self.short_name
-    to_s.underscore.split(%r{_}).first
+    to_s.underscore.split(/_/).first
   end
 
   def self.path_name
@@ -218,14 +222,9 @@ class Sidebar < ActiveRecord::Base
     Sidebar.transaction do
       Sidebar.all.each do |s|
         s.active_position = s.staged_position
-        s.staged_position = nil
         s.save!
       end
     end
-  end
-
-  def blog
-    Blog.default
   end
 
   def publish

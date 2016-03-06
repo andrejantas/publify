@@ -2,16 +2,16 @@ class Admin::RedirectsController < Admin::BaseController
   before_action :set_redirect, only: [:edit, :update, :destroy]
 
   def index
-    @redirects = Redirect.where('origin is null').order('id desc').page(params[:page]).per(this_blog.admin_display_elements)
+    @redirects = Redirect.where(content_id: nil).order('id desc').page(params[:page]).per(this_blog.admin_display_elements)
     @redirect = Redirect.new
   end
 
   def edit
-    @redirects = Redirect.where('origin is null').order('id desc').page(params[:page]).per(this_blog.admin_display_elements)
+    @redirects = Redirect.where(content_id: nil).order('id desc').page(params[:page]).per(this_blog.admin_display_elements)
   end
 
   def create
-    @redirect = Redirect.new(redirect_params)
+    @redirect = this_blog.redirects.build(redirect_params)
 
     if @redirect.save
       redirect_to admin_redirects_url, notice: 'Redirect was successfully created.'

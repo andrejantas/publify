@@ -3,12 +3,8 @@ module ContentBase
     base.extend ClassMethods
   end
 
-  def blog
-    @blog ||= Blog.default
-  end
-
   attr_accessor :just_changed_published_status
-  alias_method :just_changed_published_status?, :just_changed_published_status
+  alias just_changed_published_status? just_changed_published_status
 
   def really_send_notifications
     interested_users.each do |value|
@@ -44,7 +40,7 @@ module ContentBase
   # Post-process the HTML.  This is a noop by default, but Comment overrides it
   # to enforce HTML sanity.
   def html_postprocess(_field, html)
-    html
+    html.html_safe
   end
 
   def html_preprocess(_field, html)
@@ -56,11 +52,11 @@ module ContentBase
   end
 
   def excerpt_text(length = 160)
-    if respond_to?(:excerpt) && (excerpt || '') != ''
-      text = generate_html(:excerpt, excerpt)
-    else
-      text = html(:all)
-    end
+    text = if respond_to?(:excerpt) && (excerpt || '') != ''
+             generate_html(:excerpt, excerpt)
+           else
+             html(:all)
+           end
 
     text = text.strip_html
 
@@ -78,7 +74,7 @@ module ContentBase
 
   def publish!
     self.published = true
-    self.save!
+    save!
   end
 
   # The default text filter.  Generally, this is the filter specified by blog.text_filter,

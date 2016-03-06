@@ -8,8 +8,8 @@ AllCops:
   - 'tmp/**/*'
   - 'vendor/**/*'
 
-  # Include Rails cops
-  RunRailsCops: true
+Rails:
+  Enabled: true
 
 # Allow if (foo = get_foo) style
 Lint/AssignmentInCondition:
@@ -52,14 +52,13 @@ Style/FormatString:
 
 # Multi-line operations should be simply indented. Aligning them makes it even
 # harder to keep a sane line length.
-Style/MultilineOperationIndentation:
+Style/MultilineMethodCallIndentation:
   EnforcedStyle: indented
 
-# FIXME: Clean up the excluded files
-Style/RescueModifier:
-  Exclude:
-  - lib/spam_protection.rb
-  - app/controllers/admin/dashboard_controller.rb
+# Multi-line operations should be simply indented. Aligning them makes it even
+# harder to keep a sane line length.
+Style/MultilineOperationIndentation:
+  EnforcedStyle: indented
 
 # Always use raise to raise exceptions
 Style/SignalException:
