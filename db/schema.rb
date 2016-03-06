@@ -41,15 +41,15 @@ ActiveRecord::Schema.define(version: 20160110094906) do
     t.integer  "text_filter_id", limit: 4
     t.text     "whiteboard",     limit: 65535
     t.string   "name",           limit: 255
-    t.boolean  "published",      limit: 1,     default: false
-    t.boolean  "allow_pings",    limit: 1
-    t.boolean  "allow_comments", limit: 1
+    t.boolean  "published",                    default: false
+    t.boolean  "allow_pings"
+    t.boolean  "allow_comments"
     t.datetime "published_at"
-    t.string   "state"
-    t.integer  "parent_id"
-    t.text     "settings"
-    t.string   "post_type",      default: "read"
-    t.integer  "blog_id"
+    t.string   "state",          limit: 255
+    t.integer  "parent_id",      limit: 4
+    t.text     "settings",       limit: 65535
+    t.string   "post_type",      limit: 255,   default: "read"
+    t.integer  "blog_id",        limit: 4
   end
 
   add_index "contents", ["id", "type"], name: "index_contents_on_id_and_type", using: :btree
@@ -74,10 +74,10 @@ ActiveRecord::Schema.define(version: 20160110094906) do
     t.string   "url",              limit: 255
     t.string   "ip",               limit: 40
     t.string   "blog_name",        limit: 255
-    t.boolean  "published",        limit: 1,     default: false
+    t.boolean  "published",                      default: false
     t.datetime "published_at"
     t.string   "state",            limit: 255
-    t.boolean  "status_confirmed", limit: 1
+    t.boolean  "status_confirmed"
     t.string   "user_agent",       limit: 255
   end
 
@@ -112,28 +112,13 @@ ActiveRecord::Schema.define(version: 20160110094906) do
     t.text   "modules",  limit: 65535
   end
 
-  create_table "profiles_rights", id: false, force: :cascade do |t|
-    t.integer "profile_id", limit: 4
-    t.integer "right_id",   limit: 4
-  end
-
-  add_index "profiles_rights", ["profile_id"], name: "index_profiles_rights_on_profile_id", using: :btree
-
-  create_table "redirections", force: :cascade do |t|
-    t.integer "content_id",  limit: 4
-    t.integer "redirect_id", limit: 4
-  end
-
-  add_index "redirections", ["content_id"], name: "index_redirections_on_content_id", using: :btree
-  add_index "redirections", ["redirect_id"], name: "index_redirections_on_redirect_id", using: :btree
-
   create_table "redirects", force: :cascade do |t|
-    t.string   "from_path"
-    t.string   "to_path"
+    t.string   "from_path",  limit: 255
+    t.string   "to_path",    limit: 255
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.integer  "content_id"
-    t.integer  "blog_id"
+    t.integer  "content_id", limit: 4
+    t.integer  "blog_id",    limit: 4
   end
 
   create_table "resources", force: :cascade do |t|
@@ -143,24 +128,24 @@ ActiveRecord::Schema.define(version: 20160110094906) do
     t.datetime "created_at"
     t.datetime "updated_at"
     t.integer  "article_id",      limit: 4
-    t.boolean  "itunes_metadata", limit: 1
+    t.boolean  "itunes_metadata"
     t.string   "itunes_author",   limit: 255
     t.string   "itunes_subtitle", limit: 255
     t.integer  "itunes_duration", limit: 4
     t.text     "itunes_summary",  limit: 65535
     t.string   "itunes_keywords", limit: 255
     t.string   "itunes_category", limit: 255
-    t.boolean  "itunes_explicit", limit: 1
+    t.boolean  "itunes_explicit"
   end
 
   add_index "resources", ["article_id"], name: "index_resources_on_article_id", using: :btree
 
   create_table "sidebars", force: :cascade do |t|
-    t.integer "active_position"
-    t.text    "config"
-    t.integer "staged_position"
-    t.string  "type"
-    t.integer "blog_id",         null: false
+    t.integer "active_position", limit: 4
+    t.text    "config",          limit: 65535
+    t.integer "staged_position", limit: 4
+    t.string  "type",            limit: 255
+    t.integer "blog_id",         limit: 4,     null: false
   end
 
   add_index "sidebars", ["id", "type"], name: "index_sidebars_on_id_and_type", using: :btree
@@ -179,8 +164,8 @@ ActiveRecord::Schema.define(version: 20160110094906) do
     t.string   "name",         limit: 255
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.string   "display_name"
-    t.integer  "blog_id"
+    t.string   "display_name", limit: 255
+    t.integer  "blog_id",      limit: 4
   end
 
   create_table "text_filters", force: :cascade do |t|
@@ -201,29 +186,29 @@ ActiveRecord::Schema.define(version: 20160110094906) do
   add_index "triggers", ["pending_item_id", "pending_item_type"], name: "index_triggers_on_pending_item_id_and_pending_item_type", using: :btree
 
   create_table "users", force: :cascade do |t|
-    t.string   "login"
-    t.string   "encrypted_password",        default: "",       null: false
-    t.string   "email",                     default: "",       null: false
-    t.text     "name"
+    t.string   "login",                     limit: 255
+    t.string   "encrypted_password",        limit: 255,   default: "",       null: false
+    t.string   "email",                     limit: 255,   default: "",       null: false
+    t.text     "name",                      limit: 65535
     t.boolean  "notify_via_email"
     t.boolean  "notify_on_new_articles"
     t.boolean  "notify_on_comments"
-    t.integer  "profile_id"
-    t.string   "remember_token"
+    t.integer  "profile_id",                limit: 4
+    t.string   "remember_token",            limit: 255
     t.datetime "remember_token_expires_at"
     t.string   "text_filter_id",            limit: 255,   default: "1"
     t.string   "state",                     limit: 255,   default: "active"
     t.datetime "last_connection"
-    t.text     "settings"
-    t.integer  "resource_id"
-    t.string   "reset_password_token"
+    t.text     "settings",                  limit: 65535
+    t.integer  "resource_id",               limit: 4
+    t.string   "reset_password_token",      limit: 255
     t.datetime "reset_password_sent_at"
     t.datetime "remember_created_at"
-    t.integer  "sign_in_count",             default: 0,        null: false
+    t.integer  "sign_in_count",             limit: 4,     default: 0,        null: false
     t.datetime "current_sign_in_at"
     t.datetime "last_sign_in_at"
-    t.string   "current_sign_in_ip"
-    t.string   "last_sign_in_ip"
+    t.string   "current_sign_in_ip",        limit: 255
+    t.string   "last_sign_in_ip",           limit: 255
     t.datetime "created_at"
     t.datetime "updated_at"
   end
